@@ -2,21 +2,31 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract Only is IERC721 {
+contract Only is IERC721, IERC721Metadata {
     using Address for address;
+    using EnumerableSet for EnumerableSet.UintSet;
 
-    // Token
-    string public name = "Only";
-    string public symbol  = "ONLY";
+    uint256 public totalSupply;
+    uint256 public constant onlyPrice = 100000000000000000; // 0.1 ETH
 
     mapping(address => uint256) private balances;
+    mapping(uint256 => mapping(address => address)) private allowances;
+
+    // operator => owner
+    mapping(address => address) private operators;
 
     mapping(uint256 => address) private tokenIdOwnerMapping;
+    mapping(address => EnumerableSet.UintSet) private ownerTokenIdsMapping;
+
     mapping(address => address) private bindings;
 
     mapping(uint256 => bool) private hasTokenIdTransfered;
+
+    mapping(uint256 => string) private tokenIdURIs;
 
     /**
      * @dev Returns true if this contract implements the interface defined by
@@ -30,7 +40,8 @@ contract Only is IERC721 {
         bytes4 interfaceId
     ) external pure returns (bool) {
         return (interfaceId == type(IERC721).interfaceId ||
-            interfaceId == type(IERC165).interfaceId);
+            interfaceId == type(IERC165).interfaceId ||
+            interfaceId == type(IERC721Metadata).interfaceId);
     }
 
     /**
@@ -102,9 +113,16 @@ contract Only is IERC721 {
             require(to == bound, "cannot transfer token to address not bound");
         }
 
+        // update balance
         balances[from] -= 1;
         balances[to] += 1;
+
+        // update holding
+        ownerTokenIdsMapping[from].remove(tokenId);
         tokenIdOwnerMapping[tokenId] = to;
+        ownerTokenIdsMapping[to].add(tokenId);
+
+        // label transferd status
         hasTokenIdTransfered[tokenId] = true;
 
         emit Transfer(from, to, tokenId);
@@ -160,13 +178,20 @@ contract Only is IERC721 {
      *
      * Requirements:
      *
-     * - The caller must own the token or be an approved operator.
+     * - The caller must own the token.
      * - `tokenId` must exist.
      *
      * Emits an {Approval} event.
      */
     function approve(address to, uint256 tokenId) external {
-        // pass
+        require(
+            msg.sender == this.ownerOf(tokenId),
+            "the caller must own the token"
+        );
+
+        allowances[tokenId][msg.sender] = to;
+
+        emit Approval(msg.sender, to, tokenId);
     }
 
     /**
@@ -180,7 +205,15 @@ contract Only is IERC721 {
      * Emits an {ApprovalForAll} event.
      */
     function setApprovalForAll(address operator, bool _approved) external {
-        // pass
+        require(operator != msg.sender, "operator cannot be the caller");
+
+        if (_approved) {
+            operators[operator] = msg.sender;
+        } else {
+            delete operators[operator];
+        }
+
+        emit ApprovalForAll(msg.sender, operator, _approved);
     }
 
     /**
@@ -189,22 +222,35 @@ contract Only is IERC721 {
      * Requirements:
      *
      * - `tokenId` must exist.
+     * - `tokenId` must own by the caller.
      */
     function getApproved(
         uint256 tokenId
     ) external view returns (address operator) {
-        return address(0);
+        require(
+            tokenIdOwnerMapping[tokenId] != msg.sender,
+            "tokenId does not exist or not own by caller"
+        );
+
+        // FIXME : should return the operator which can operata all tokenIds for the caller?
+        return allowances[tokenId][msg.sender];
     }
 
     /**
      * @dev Returns if the `operator` is allowed to manage all of the assets of `owner`.
      *
+     * Requirements:
+     *
+     * -
      * See {setApprovalForAll}
      */
     function isApprovedForAll(
         address owner,
         address operator
     ) external view returns (bool) {
+        if (operators[operator] == owner) {
+            return true;
+        }
         return false;
     }
 
@@ -212,7 +258,39 @@ contract Only is IERC721 {
         bindings[from] = to;
     }
 
-    function mint() external payable {
-        // todo
+    function __exists(uint256 tokenId) private view returns (bool) {
+        return tokenIdOwnerMapping[tokenId] != address(0);
+    }
+
+
+    function mint(uint nums) external payable {
+
+        require(nums * onlyPrice <= msg.value, "value sent is not enough");
+
+        // start from totalSupply + 1 to ignore tokenid 0
+        for (uint id = totalSupply + 1; id < totalSupply + nums + 1; id++) {
+            tokenIdOwnerMapping[id] = msg.sender;
+            ownerTokenIdsMapping[msg.sender].add(id);
+            // TODO add a URI
+            tokenIdURIs[id] = "";
+            balances[msg.sender] += 1;
+        }
+        totalSupply += nums;
+    }
+
+    // override IERC721Metadata
+    function name() external pure override returns (string memory) {
+        return "Only";
+    }
+
+    function symbol() external pure override returns (string memory) {
+        return "ONLY";
+    }
+
+    function tokenURI(
+        uint256 tokenId
+    ) external view override returns (string memory) {
+        require(__exists(tokenId), "tokenId does not exist");
+        return tokenIdURIs[tokenId];
     }
 }
