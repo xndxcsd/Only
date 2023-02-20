@@ -262,9 +262,7 @@ contract Only is IERC721, IERC721Metadata {
         return tokenIdOwnerMapping[tokenId] != address(0);
     }
 
-
     function mint(uint nums) external payable {
-
         require(nums * onlyPrice <= msg.value, "value sent is not enough");
 
         // start from totalSupply + 1 to ignore tokenid 0

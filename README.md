@@ -1,13 +1,5 @@
-# Sample Hardhat Project
+# DEVELOPING
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+You can just send ONLY tokens to just one person in your entire life.
 
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
-```
+YOU SAY YOU LOVE HER/HIM, SEND HER/HIM A ONLY.
