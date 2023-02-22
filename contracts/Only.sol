@@ -297,9 +297,9 @@ contract Only is IERC721, IERC721Metadata {
         uint256 tokenId
     ) private pure returns (string memory) {
         return
-            string(
+            string.concat(
                 "ipfs://QmVFiqrFxqVVocc7qm5EKP5kGdBbYBrdGiJTMb8ybpCcEq/token",
-                string(tokenId.toString(), ".webp")
+                string.concat(tokenId.toString(), ".webp")
             );
     }
 
