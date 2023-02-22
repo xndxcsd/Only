@@ -6,5 +6,8 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.1"
+  },
+  "scripts": {
+    "gen": "ts-node ./scripts/metagen.ts"
   }
 }

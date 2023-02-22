@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity 0.8.17;
+pragma solidity 0.8.17 .0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract Only is IERC721, IERC721Metadata {
     using Address for address;
+    using Strings for uint256;
+
     using EnumerableSet for EnumerableSet.UintSet;
 
     uint256 public totalSupply;
-    uint256 public constant onlyPrice = 100000000000000000; // 0.1 ETH
+    uint256 public constant ONLY_PRICE = 1000000000000000; // 0.001 ETH
 
     mapping(address => uint256) private balances;
     mapping(uint256 => mapping(address => address)) private allowances;
@@ -88,10 +91,14 @@ contract Only is IERC721, IERC721Metadata {
         uint256 tokenId,
         bytes calldata data
     ) external {
-        address owner = this.ownerOf(tokenId);
-
-        require(owner == msg.sender, "transfer caller is not owner");
-        require(owner == from, "transfer of token that is not own");
+        require(
+            __isApprovedOrOwner(msg.sender, tokenId),
+            "caller is not the owner or approved to call"
+        );
+        require(
+            from == this.ownerOf(tokenId),
+            "sender does not own the tokenId"
+        );
         require(from != address(0), "sender address cannot be 0");
         require(to != address(0), "receiver address cannot be 0");
 
@@ -262,18 +269,38 @@ contract Only is IERC721, IERC721Metadata {
         return tokenIdOwnerMapping[tokenId] != address(0);
     }
 
-    function mint(uint nums) external payable {
-        require(nums * onlyPrice <= msg.value, "value sent is not enough");
+    function __isApprovedOrOwner(
+        address spender,
+        uint256 tokenId
+    ) private view returns (bool) {
+        address owner = this.ownerOf(tokenId);
+        return (spender == owner ||
+            spender == this.getApproved(tokenId) ||
+            operators[spender] == owner);
+    }
+
+    function mint(uint256 nums) external payable {
+        require(nums * ONLY_PRICE <= msg.value, "value sent is not enough");
 
         // start from totalSupply + 1 to ignore tokenid 0
-        for (uint id = totalSupply + 1; id < totalSupply + nums + 1; id++) {
+        for (uint256 id = totalSupply + 1; id < totalSupply + nums + 1; id++) {
             tokenIdOwnerMapping[id] = msg.sender;
             ownerTokenIdsMapping[msg.sender].add(id);
-            // TODO add a URI
-            tokenIdURIs[id] = "";
+            // FIXME : use token1.json for test
+            tokenIdURIs[id] = __genMetaData(1);
             balances[msg.sender] += 1;
         }
         totalSupply += nums;
+    }
+
+    function __genMetaData(
+        uint256 tokenId
+    ) private pure returns (string memory) {
+        return
+            string(
+                "ipfs://QmVFiqrFxqVVocc7qm5EKP5kGdBbYBrdGiJTMb8ybpCcEq/token",
+                string(tokenId.toString(), ".webp")
+            );
     }
 
     // override IERC721Metadata
