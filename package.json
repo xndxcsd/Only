@@ -8,6 +8,7 @@
     "@openzeppelin/contracts": "^4.8.1"
   },
   "scripts": {
-    "gen": "ts-node ./scripts/metagen.ts"
+    "gen": "ts-node ./scripts/metagen.ts",
+    "deploy_goerli": "ts-node ./scripts/deploy_goerli.ts"
   }
 }
