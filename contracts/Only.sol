@@ -69,11 +69,7 @@ contract Only is Context, IERC721, IERC721Metadata {
      * - `tokenId` must exist.
      */
     function ownerOf(uint256 tokenId) external view returns (address owner) {
-        owner = tokenIdOwnerMapping[tokenId];
-
-        require(owner != address(0), "tokenId does not exist");
-
-        return owner;
+        return __ownerOf(tokenId);
     }
 
     /**
@@ -157,7 +153,7 @@ contract Only is Context, IERC721, IERC721Metadata {
      */
     function approve(address to, uint256 tokenId) external {
         require(
-            _msgSender() == this.ownerOf(tokenId),
+            _msgSender() == __ownerOf(tokenId),
             "the caller must own the token"
         );
 
@@ -200,12 +196,10 @@ contract Only is Context, IERC721, IERC721Metadata {
         uint256 tokenId
     ) external view returns (address operator) {
         require(
-            tokenIdOwnerMapping[tokenId] != _msgSender(),
+            tokenIdOwnerMapping[tokenId] == _msgSender(),
             "tokenId does not exist or not own by caller"
         );
-
-        // FIXME : should return the operator which can operata all tokenIds for the caller?
-        return allowances[tokenId][_msgSender()];
+        return __getApproved(_msgSender(), tokenId);
     }
 
     /**
@@ -253,7 +247,7 @@ contract Only is Context, IERC721, IERC721Metadata {
             "caller is not the owner or approved to call"
         );
         require(
-            from == this.ownerOf(tokenId),
+            from == __ownerOf(tokenId),
             "sender does not own the tokenId"
         );
         require(from != address(0), "sender address cannot be 0");
@@ -339,9 +333,9 @@ contract Only is Context, IERC721, IERC721Metadata {
         address spender,
         uint256 tokenId
     ) private view returns (bool) {
-        address owner = this.ownerOf(tokenId);
+        address owner = __ownerOf(tokenId);
         return (spender == owner ||
-            spender == this.getApproved(tokenId) ||
+            spender == __getApproved(owner, tokenId) ||
             operators[spender] == owner);
     }
 
@@ -354,4 +348,21 @@ contract Only is Context, IERC721, IERC721Metadata {
                 string.concat(tokenId.toString(), ".webp")
             );
     }
+
+    function __ownerOf(uint256 tokenId) private view returns (address owner) {
+        owner = tokenIdOwnerMapping[tokenId];
+
+        require(owner != address(0), "tokenId does not exist");
+
+        return owner;
+    }
+
+    function __getApproved(
+        address owner,
+        uint256 tokenId
+    ) private view returns (address operator) {
+        // FIXME : should return the operator which can operata all tokenIds for the caller?
+        return allowances[tokenId][owner];
+    }
+
 }
