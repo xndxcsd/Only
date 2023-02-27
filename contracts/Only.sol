@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "hardhat/console.sol";
 
 contract Only is Context, IERC721, IERC721Metadata {
     using Address for address;
@@ -30,6 +29,7 @@ contract Only is Context, IERC721, IERC721Metadata {
     mapping(address => address) private bindings;
 
     mapping(uint256 => bool) private hasTokenIdTransfered;
+    mapping(uint256 => string) private transferData;
 
     mapping(uint256 => string) private tokenIdURIs;
 
@@ -57,7 +57,6 @@ contract Only is Context, IERC721, IERC721Metadata {
      * @dev Returns the number of tokens in ``owner``'s account.
      */
     function balanceOf(address owner) external view returns (uint256 balance) {
-        require(_msgSender() == owner, "cannot query the other's balance");
         return balances[owner];
     }
 
@@ -93,7 +92,7 @@ contract Only is Context, IERC721, IERC721Metadata {
         uint256 tokenId,
         bytes calldata data
     ) external {
-        __transfer(from, to, tokenId);
+        __transfer(from, to, tokenId, data);
     }
 
     /**
@@ -286,6 +285,13 @@ contract Only is Context, IERC721, IERC721Metadata {
         emit Transfer(from, to, tokenId);
     }
 
+    function __transfer(address from, address to, uint256 tokenId, bytes calldata data) private {
+        require(data.length != 0, "data cannot be empty");
+        
+        transferData[tokenId] = string(data);
+        __transfer(from, to, tokenId);
+    }
+
     // prob expensive
     function getOwnedTokens() external view returns (uint256[] memory) {
         return ownerTokenIdsMapping[_msgSender()].values();
@@ -317,6 +323,8 @@ contract Only is Context, IERC721, IERC721Metadata {
             // FIXME : use token[1,2,3].json for test
             tokenIdURIs[id] = __genMetaData((id%3)+1);
             balances[_msgSender()] += 1;
+
+            emit Transfer(address(0), _msgSender(), id);
         }
         totalSupply += nums;        
     }
