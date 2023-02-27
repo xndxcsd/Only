@@ -353,7 +353,7 @@ contract Only is Context, IERC721, IERC721Metadata {
         return
             string.concat(
                 "ipfs://QmUEN7sfEUK2J2e3eRJiE3G7KmWkpCwBwx7rWUq557RKG9/token",
-                string.concat(tokenId.toString(), ".webp")
+                string.concat(tokenId.toString(), ".json")
             );
     }
 

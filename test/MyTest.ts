@@ -204,7 +204,7 @@ describe("Only Token", function () {
             const { only, price } = await loadFixture(init);
 
             await only.mint(1, { value: price });
-            await expect(await only.tokenURI(1)).to.be.equal("ipfs://QmUEN7sfEUK2J2e3eRJiE3G7KmWkpCwBwx7rWUq557RKG9/token1.webp");
+            await expect(await only.tokenURI(1)).to.be.equal("ipfs://QmUEN7sfEUK2J2e3eRJiE3G7KmWkpCwBwx7rWUq557RKG9/token1.json");
         })
     })
     
