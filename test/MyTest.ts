@@ -14,6 +14,7 @@ import { ethers } from "hardhat";
  *      - transfer without binding
  *      - approved
  *      - approved for all
+ *  - tokenURI
  */
 describe("Only Token", function () {
     async function init() {
@@ -196,5 +197,15 @@ describe("Only Token", function () {
             expect(only.connect(acc2)["safeTransferFrom(address,address,uint256)"](owner.address, acc1.address, t2))
                 .to.be.revertedWith("caller is not the owner or approved to call");
         })
+    });
+
+    describe("tokenURI", async function () {
+        it("tokenURI", async function () {
+            const { only, price } = await loadFixture(init);
+
+            await only.mint(1, { value: price });
+            await expect(await only.tokenURI(1)).to.be.equal("ipfs://QmUEN7sfEUK2J2e3eRJiE3G7KmWkpCwBwx7rWUq557RKG9/token1.webp");
+        })
     })
+    
 });

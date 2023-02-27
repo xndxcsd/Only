@@ -317,16 +317,16 @@ contract Only is Context, IERC721, IERC721Metadata {
 
     function __mint(uint256 nums) private {
         // start from totalSupply + 1 to ignore tokenid 0
-        for (uint256 id = totalSupply + 1; id < totalSupply + nums + 1; id++) {
-            tokenIdOwnerMapping[id] = _msgSender();
-            ownerTokenIdsMapping[_msgSender()].add(id);
-            // FIXME : use token[1,2,3].json for test
-            tokenIdURIs[id] = __genMetaData((id%3)+1);
+        for (uint256 id = totalSupply; id < totalSupply + nums; id++) {
+            uint256 tokenId = id%3 + 1;
+            tokenIdOwnerMapping[tokenId] = _msgSender();
+            ownerTokenIdsMapping[_msgSender()].add(tokenId);
+            tokenIdURIs[tokenId] = __genMetaData(tokenId);
             balances[_msgSender()] += 1;
 
-            emit Transfer(address(0), _msgSender(), id);
+            emit Transfer(address(0), _msgSender(), tokenId);
         }
-        totalSupply += nums;        
+        totalSupply += nums;
     }
 
     function __bind(address from, address to) private {
@@ -352,7 +352,7 @@ contract Only is Context, IERC721, IERC721Metadata {
     ) private pure returns (string memory) {
         return
             string.concat(
-                "ipfs://QmVFiqrFxqVVocc7qm5EKP5kGdBbYBrdGiJTMb8ybpCcEq/token",
+                "ipfs://QmUEN7sfEUK2J2e3eRJiE3G7KmWkpCwBwx7rWUq557RKG9/token",
                 string.concat(tokenId.toString(), ".webp")
             );
     }
